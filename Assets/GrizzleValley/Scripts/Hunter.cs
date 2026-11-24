@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.Rendering.Universal;
+using GameTouch;
 
 namespace GrizzleValley
 {
@@ -97,22 +98,29 @@ namespace GrizzleValley
 
         void Update()
         {
-            var mouse = Mouse.current;
-            if (!bot && !lookLocked && mouse != null)
+            var mouse = TouchPad.RecentTouch ? null : Mouse.current; // ignore mouse events a browser emulates from taps
+            var tp = TouchPad.I;
+            bool touchLook = !bot && !lookLocked && tp != null && tp.Dragging;
+            if (!bot && !lookLocked && (mouse != null || touchLook))
             {
-                Vector2 d = mouse.delta.ReadValue() * 0.07f * (cam.fieldOfView / BaseFov);
+                Vector2 d = mouse != null ? mouse.delta.ReadValue() * 0.07f : Vector2.zero;
+                // a drag across the screen width turns about 100 degrees
+                if (touchLook) d += tp.DragDelta / Mathf.Max(1f, Screen.width) * 100f;
+                d *= cam.fieldOfView / BaseFov;
                 yaw += d.x; pitch -= d.y;
                 pitch = Mathf.Clamp(pitch, -35f, 50f);
                 sway = Vector2.Lerp(sway, d, Time.deltaTime * 10f);
             }
             else sway = Vector2.Lerp(sway, Vector2.zero, Time.deltaTime * 6f);
 
-            bool wantScope = bot ? botScope : (mouse != null && mouse.rightButton.isPressed);
+            var g = Game.I;
+            bool wantScope = bot ? botScope : ((mouse != null && mouse.rightButton.isPressed) || (g != null && g.scopeBtn != null && g.scopeBtn.held));
             if (Game.I != null && !Game.I.CanScope) wantScope = false;
             scoped = wantScope;
             scopeT = Mathf.MoveTowards(scopeT, scoped ? 1f : 0f, Time.deltaTime * 6f);
 
             if (!bot && mouse != null && mouse.leftButton.wasPressedThisFrame) Game.I?.OnFirePressed();
+            if (!bot && g != null && g.fireBtn != null && g.fireBtn.pressed) g.OnFirePressed();
 
             Apply();
         }

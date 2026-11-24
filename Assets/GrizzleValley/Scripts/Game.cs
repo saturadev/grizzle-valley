@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using GameTouch;
 #if UNITY_EDITOR && SATURA_SPACE
 using SaturaSpace;
 #endif
@@ -35,6 +36,8 @@ namespace GrizzleValley
 
         Hunter hunter;
         Hud hud;
+        public TouchPad touch;
+        public TouchPad.Button fireBtn, scopeBtn;
         Bear bear;
         Transform runtime;
         readonly List<Critter> critters = new List<Critter>();
@@ -83,6 +86,10 @@ namespace GrizzleValley
             World.Build(runtime, 7);
             hunter = Hunter.Create(runtime);
             hud = Hud.Create(runtime);
+            // phones: drag anywhere to aim, FIRE to shoot, hold SCOPE to zoom (two thumbs at once)
+            touch = TouchPad.Create(Font, FontOutline);
+            fireBtn = touch.AddButton("FIRE", new Vector2(1, 0), new Vector2(-190, 460), 130, Hud.Orange, 50);
+            scopeBtn = touch.AddButton("SCOPE", new Vector2(1, 0), new Vector2(-190, 720), 95, Hud.Cream, 36);
             World.BuildSky(hunter.cam.transform);
             Fx.Root = runtime;
         }
@@ -118,7 +125,7 @@ namespace GrizzleValley
             Spawn(CritterKind.Puffhop, new Vector3(5.5f, 0, 17f));
             Spawn(CritterKind.Antlerkin, new Vector3(-8f, 0, 31f));
             Spawn(CritterKind.Antlerkin, new Vector3(9f, 0, 24f));
-            hud.Hint("MOUSE: AIM   CLICK: SHOOT\nRIGHT CLICK: SCOPE", 6f);
+            hud.Hint(TouchPad.Active ? "DRAG: AIM   FIRE: SHOOT\nHOLD SCOPE: ZOOM" : "MOUSE: AIM   CLICK: SHOOT\nRIGHT CLICK: SCOPE", 6f);
         }
 
         void Spawn(CritterKind kind, Vector3 pos)
@@ -183,6 +190,8 @@ namespace GrizzleValley
             float dt = Time.deltaTime;
             stateT += dt;
             hud.ShowScope(hunter.ScopeAmount);
+            touch.hidden = botMode;
+            scopeBtn.visible = CanScope;
             if (state == State.Hunt)
             {
                 critters.RemoveAll(c => c == null || c.dead);
@@ -200,7 +209,7 @@ namespace GrizzleValley
                     Fx.Shake = 0.6f;
                     state = State.Rings; stateT = 0; ringActive = false; ringGap = 2.2f;
                     hud.SetStatus("MISS 0/" + MissLimit);
-                    hud.Hint("CLICK WHEN THE RING\nCLOSES ON THE TARGET", 4f);
+                    hud.Hint(TouchPad.Active ? "TAP FIRE WHEN THE RING\nCLOSES ON THE TARGET" : "CLICK WHEN THE RING\nCLOSES ON THE TARGET", 4f);
                 }
             }
             else if (state == State.Rings)
