@@ -1,5 +1,7 @@
 # Grizzle Valley
 
+**[▶ Play in browser](https://saturaspace.com/play/bear/)**
+
 Scope a few critters in a sunny low-poly meadow, then a huge, googly-eyed bear stumbles in. He looks scary. He is not.
 
 ![gameplay](media/gameplay.gif)
